@@ -1,6 +1,10 @@
 .PHONY: all
 all: minima.iso
 
+.PHONY: dep
+dep:
+	sudo apt-get install nasm qemu-system-x86
+
 .PHONY: all-hdd
 all-hdd: minima.hdd
 
