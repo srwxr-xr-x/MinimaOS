@@ -5,6 +5,14 @@ all: minima.iso
 dep:
 	sudo apt-get install nasm qemu-system-x86
 
+.PHONY: info
+info:
+	@echo "make: 		Make ISO"
+	@echo "make dep:	Make all required dependencies"
+	@echo "make run: 	Boot off ISO in QEMU"
+	@echo "make debug: 	Boot off ISO in QEMU with GDB hooked into it"
+	@echo "make clean:	Clean all files"
+
 .PHONY: all-hdd
 all-hdd: minima.hdd
 

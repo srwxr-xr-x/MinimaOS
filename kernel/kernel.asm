@@ -4,7 +4,8 @@ _start:
   push rbp
   mov rbp, rsp
 
-  mov rax, 0
-
+  mov dword [0xb8000], 0x07690748
+  hlt
+  
   mov rsp, rbp
   pop rbp
