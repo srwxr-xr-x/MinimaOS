@@ -3,7 +3,7 @@ all: minima.iso
 
 .PHONY: dep
 dep:
-	sudo apt-get install nasm qemu-system-x86
+	sudo apt-get install nasm qemu-system-x86 gcc xorriso gdb
 
 .PHONY: info
 info:
