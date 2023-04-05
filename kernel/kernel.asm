@@ -1,5 +1,7 @@
   [bits 64]
   [global _start]
+  [extern font8x16]
+
   %define LIMINE_COMMON_MAGIC dq 0xc7b1dd30df4c8b88, 0x0a82e883a194f07b ; First Magic number, used to distinguish requests to limine
 struc limine_framebuffer_response ;
     .rev: resq 1
@@ -42,6 +44,7 @@ frame:
   iend
 
 section .data
+
 struc terminal_res
   .cursor_x: resq 1
   .cursor_y: resq 1
@@ -71,13 +74,44 @@ _start:
 
   mov r8, rbx						    	;; Mov it into R8 for convenience
 
-  mov qword [terminal + terminal_res.cursor_x], 640	   	;; Set the x position for the cursor to 640
-  mov qword [terminal + terminal_res.cursor_y], 400		;; Set the y position for the cursor to 400
+  mov qword [terminal + terminal_res.cursor_x], 0	   	;; Set the x position for the cursor to 640
+  mov qword [terminal + terminal_res.cursor_y], 0		;; Set the y position for the cursor to 400
 
-
+  mov rdi, 0x282828
   call .screensetup						;; Iterate through the screen and set it to a nice background
-  call .cursorsetup						;; Draw a cursor based on where cursor_x and cursor_y is
-  jmp .forever							;; Loop forever
+
+  mov rdi, LOGO1
+  call .printstring
+  mov qword [terminal + terminal_res.cursor_x], 0
+  add qword [terminal + terminal_res.cursor_y], 16
+
+  mov rdi, LOGO2
+  call .printstring
+  mov qword [terminal + terminal_res.cursor_x], 0
+  add qword [terminal + terminal_res.cursor_y], 16
+
+  mov rdi, LOGO3
+  call .printstring
+  mov qword [terminal + terminal_res.cursor_x], 0
+  add qword [terminal + terminal_res.cursor_y], 16
+
+  mov rdi, LOGO4
+  call .printstring
+  mov qword [terminal + terminal_res.cursor_x], 0
+  add qword [terminal + terminal_res.cursor_y], 16
+
+  mov rdi, MSG_VERSION
+  call .printstring
+  mov qword [terminal + terminal_res.cursor_x], 0
+  add qword [terminal + terminal_res.cursor_y], 16
+
+  mov rdi, MOTD
+  call .printstring
+  mov qword [terminal + terminal_res.cursor_x], 0
+  add qword [terminal + terminal_res.cursor_y], 16
+
+
+
 
 .forever:
   hlt
@@ -88,9 +122,14 @@ _start:
 
 .screensetup:
   push rbp
+  push rbx
+  push r12
+  push r13
+  push r14
+  push r15
   mov rbp, rsp
 
-  mov r9d, 0x282828						;; Color to write to the screen
+  mov r9d, edi
 
 .loop1:
   cmp r12w, word [terminal + terminal_res.width]   		;; Check if we are at the end of the screen
@@ -106,38 +145,120 @@ _start:
   jmp .loop1							;; Repeat
 .screendone:
   mov rsp, rbp
+  pop r15
+  pop r14
+  pop r13
+  pop r12
+  pop rbx
   pop rbp
   ret
 
-.cursorsetup:
+.printstring:
   push rbp
+  push rbx
+  push r12
+  push r13
+  push r14
+  push r15
   mov rbp, rsp
 
+
+.printloop:
+  cmp byte [rdi+r12], 92
+  jne .cont
+  cmp byte [rdi+r12+1], 110
+  jne .cont
+  add r12, 2
+  mov qword [terminal + terminal_res.cursor_x], 0
+  add qword [terminal + terminal_res.cursor_y], 16
+
+.cont:
+  mov sil, byte [rdi+r12]
+  mov rcx, [font8x16+rsi*8]
+  call .cursorsetup
+  add qword [terminal + terminal_res.cursor_x], 8
+
+  cmp sil, 0
+  je .printdone
+  add r12, 1
+  jmp .printloop
+
+.printdone:
+  mov rsp, rbp
+  pop r15
+  pop r14
+  pop r13
+  pop r12
+  pop rbx
+  pop rbp
+  ret
+
+
+.cursorsetup:
+  push rbp
+  push rsi
+  push r9
+  push r10
+  push r11
+  push r12
+  push r13
+  push r14
+  push r15
+  mov rbp, rsp
+
+  xor r14, r14
+  mov r15b, byte [rcx+r14*4]
+
   mov r12, [terminal + terminal_res.cursor_x]	;; Set the beginning of the X Position to the value we want
+
   mov r13, [terminal + terminal_res.cursor_y]	;; Set the beginning of the Y Position to the value we want
+  sub r13, 1
 
   mov r10, [terminal + terminal_res.cursor_y]	;; Mov the Y value into a seperate register we will use for the end position
   add r10, 16					;; Add 16 to the Y, as we want an 8x*16* pixel font size
 
   mov r11, [terminal + terminal_res.cursor_x]	;; Mov the X value into a seperate register we will use for the end position
   add r11, 8					;; Add 8 to the X, as we want an *8*x16 pixel font size
+  mov r9d, 0x7e7165				;; Set the color to print to a nice tan
 .for1:
   inc r13					;; Increment Y index
+  mov r15b, byte [rcx+r14*4]			;; Get byte of first row of the char
+  inc r14					;; Increment index for char array
   cmp r13, r10 					;; Compare to the end
-  jle .for2					;; Jump to next X loop
+  jge .cursordone				;; Jump to epilogue if we are at end
 .for2:
-  inc r12					;; Increment X register
-  mov r9d, 0x7E7165				;; Get a color to tell apart
+  mov dl, r15b					;; Mov the byte into DL
+  cmp dl, 0					;; Cmp to 0, this will *only* happen if we should skip a line, or are at the end, which we covered earlier with cmp r13, r10
+  je .for1					;; Jump to increment Y index and skip
+  and dl, 1					;; AND the bit to see if it is ON
+  cmp dl, 1					;; CMP to 1, if it is on, it will be 1
+  je .bit_set					;; JE to .bit_set, print the pixel
+.continue:
+  inc r12					;; Else, increment X index
+  cmp r12, r11					;; CMP to the end
+  je .check					;; If true, jmp to our checking routine
+  ror r15b, 1					;; Else, rotate left
+  jmp .for2					;; and jump back to print
+.bit_set:
   call .putpixel				;; Put pixel on the screen
   cmp r12, r11					;; See if we are at the end of the screen yet
-  jle .for2					;; if not, keep printing
+  jle .continue					;; if not, keep printing
 
+.check:
   cmp r13, r10					;; If we are, check if we should stop
   je .cursordone				;; Exit if we are
   mov r12, [terminal + terminal_res.cursor_x]	;; Else, clear X and start over on next line
   jmp .for1					;; Jump over to the beginning
 .cursordone:
   mov rsp, rbp
+  pop r9
+  pop r10
+  pop r11
+  pop r12
+  pop r13
+  pop r14
+  pop r15
+  pop rsi
   pop rbp
   ret
 
@@ -182,3 +303,11 @@ _start:
   pop rbp
   ret
 
+
+MSG_VERSION dw "Welcome to Minima 23.02.1 (Minimal 1.0.0-pre2 x86_64)", 0
+MOTD dw "Don't expect much, i\nt's called Minima for a reason! - Linus Torvalds", 0
+
+LOGO1 dw "         _      _            ____  ____", 0
+LOGO2 dw "  __ _  (_)__  (_)_ _  ___ _/ __ \/ __/", 0
+LOGO3 dw " /  ' \/ / _ \/ /  ' \/ _ `/ /_/ /\ \  ", 0
+LOGO4 dw "/_/_/_/_/_//_/_/_/_/_/\_,_/\____/___/  ", 0
