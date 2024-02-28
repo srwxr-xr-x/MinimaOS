@@ -1,7 +1,7 @@
 # MinimaOS
 
-[![Makefile CI](https://github.com/srwxr-xr-x/MinimaOS/actions/workflows/makefile.yml/badge.svg)](https://github.com/srwxr-xr-x/MinimaOS/actions/workflows/makefile.yml)
-
+![Makefile CI](https://github.com/srwxr-xr-x/MinimaOS/actions/workflows/makefile.yml/badge.svg)
+![](https://raw.githubusercontent.com/srwxr-xr-x/MinimaOS/trunk/Images/Main.png)
 ## Setup
 
 > **Note** -
