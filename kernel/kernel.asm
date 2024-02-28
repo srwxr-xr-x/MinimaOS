@@ -38,9 +38,9 @@ endstruc
 
 frame:
   istruc framebuffer_req
-    at .id, dq 0xc7b1dd30df4c8b88, 0x0a82e883a194f07b, 0x9d5827dcd881dd75, 0xa3148604f6fab11b
-    at .rev, dq 0
-    at .response, dq 0
+    at framebuffer_req.id, dq 0xc7b1dd30df4c8b88, 0x0a82e883a194f07b, 0x9d5827dcd881dd75, 0xa3148604f6fab11b
+    at framebuffer_req.rev, dq 0
+    at framebuffer_req.response, dq 0
   iend
 
 section .data
@@ -55,11 +55,11 @@ endstruc
 
 terminal:
   istruc terminal_res
-    at .cursor_x, dq 0
-    at .cursor_y, dq 0
-    at .width,  dw 1280
-    at .height, dw 800
-    at .scroll, db 0
+    at terminal_res.cursor_x, dq 0
+    at terminal_res.cursor_y, dq 0
+    at terminal_res.width,  dw 1280
+    at terminal_res.height, dw 800
+    at terminal_res.scroll, db 0
   iend
 
 section .text
@@ -305,7 +305,7 @@ _start:
 
 
 MSG_VERSION dw "Welcome to Minima 23.02.1 (Minimal 1.0.0-pre2 x86_64)", 0
-MOTD dw "Don't expect much, i\nt's called Minima for a reason! - Linus Torvalds", 0
+MOTD dw "'Don't expect much, it's called Minima for a reason!' - Linus Torvalds", 0
 
 LOGO1 dw "         _      _            ____  ____", 0
 LOGO2 dw "  __ _  (_)__  (_)_ _  ___ _/ __ \/ __/", 0
